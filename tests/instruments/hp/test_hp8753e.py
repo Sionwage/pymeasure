@@ -26,7 +26,14 @@ import numpy as np
 
 from pymeasure.adapters import PrologixAdapter
 from pymeasure.instruments.hp import HP8753E
+from pymeasure.test import expected_protocol
 
 
 def test_sanity():
     assert 1 + 1 == 2
+
+def test_hp8753e_id():
+    """Verify *IDN? communication"""
+
+    with expected_protocol(HP8753E, [('*IDN?', 'HEWLETT PACKARD,8753E,0,7.10\n'),('*IDN?', 'HEWLETT PACKARD,8753E,0,7.10\n')]) as inst:
+        assert inst.id == ['HEWLETT PACKARD', '8753E', '0', '7.10']
