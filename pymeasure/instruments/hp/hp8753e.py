@@ -29,7 +29,7 @@ import numpy as np
 from pyvisa import VisaIOError
 
 from pymeasure.instruments import Instrument
-from pymeasure.instruments.validators import strict_discrete_set, truncated_range
+from pymeasure.instruments.validators import strict_discrete_set, truncated_range, strict_range
 
 
 class HP8753E(Instrument):
@@ -46,6 +46,10 @@ class HP8753E(Instrument):
         self,
         adapter=None,
         name=None,  # "Hewlett Packard 8753E Vector Network Analyzer",
+        min_frequency=30.0e3,
+        max_frequency=6.0e9,
+        min_power=-70,
+        max_power=10,
         **kwargs,
     ):
         super().__init__(adapter=adapter, name=name, includeSCPI=False, **kwargs)
@@ -55,6 +59,13 @@ class HP8753E(Instrument):
         self._fw = ""
         self._sn = ""
         self._options = ""
+
+        self.start_frequency_values = [min_frequency, max_frequency]
+        self.stop_frequency_values = [min_frequency, max_frequency]
+        self.center_frequency_values = [min_frequency, max_frequency]
+        self.span_frequency_values = [0, max_frequency-min_frequency]
+
+        self.power_values = [min_power, max_power]
 
         if name is None:
             # written this way to pass 'test_all_instruments.py' while allowing the
@@ -79,33 +90,33 @@ class HP8753E(Instrument):
     start_frequency = Instrument.control(
         "STAR?",
         "STAR %e Hz",
-        f"""Control the start frequency in Hz. (float truncated from 30_000.0
-        to 6_000_000_000.0).
+        """Control the start frequency in Hz. (float).
         """,
-        validator=truncated_range,
+        validator=strict_range,
         cast=float,
-        values=[30e3, 6e9],
+        dynamic=True,
+        values=[30.0e3, 6.0e9],
     )
 
     stop_frequency = Instrument.control(
         "STOP?",
         "STOP %e Hz",
-        """Control the stop frequency in Hz. (float truncated from 30_000.0
-        to 6_000_000_000.0).
+        """Control the stop frequency in Hz. (float).
         """,
-        validator=truncated_range,
+        validator=strict_range,
         cast=float,
+        dynamic=True,
         values=[30e3, 6e9],
     )
 
     center_frequency = Instrument.control(
         "CENT?",
         "CENT %e Hz",
-        """Control the center frequency in Hz (float truncated from 30_000.0
-        to 6_000_000_000.0).
+        """Control the center frequency in Hz (float).
         """,
         cast=float,
-        validator=truncated_range,
+        validator=strict_range,
+        dynamic=True,
         values=[30e3, 6e9],
     )
 
@@ -116,8 +127,9 @@ class HP8753E(Instrument):
         to 6_000_000_000.0).
         """,
         cast=float,
-        validator=truncated_range,
-        values=[0, 6e9],
+        validator=strict_range,
+        dynamic=True,
+        values=[0, 6e9-30e3],
     )
 
     sweep_time = Instrument.control(
@@ -125,7 +137,7 @@ class HP8753E(Instrument):
         "SWET%.2e",
         """Control the sweep time in seconds. (float truncated from 0.0 to 36_400.0)
         """,
-        validator=truncated_range,
+        validator=strict_range,
         cast=float,
         values=[0.01, 36_400.0],
     )
@@ -140,8 +152,8 @@ class HP8753E(Instrument):
         """Control the number of averages for a scan sweep. (int truncated from 1 to 999).
         """,
         cast=lambda x: int(float(x)),  # need float() to convert scientific notation in strings
-        validator=truncated_range,
-        values=[0, 999],
+        validator=strict_discrete_set,
+        values=[1, 999],
     )
 
     averaging_enabled = Instrument.control(
@@ -169,7 +181,8 @@ class HP8753E(Instrument):
         "POWE%.3e",
         """Control the output RF power of the instrument's active port. (float truncated from -70.0 to 10.0 in dBm).""",
         cast=float,
-        validator=truncated_range,
+        validator=strict_range,
+        dynamic=True,
         values=[-70, 10],
     )
 
@@ -348,7 +361,7 @@ class HP8753E(Instrument):
         """Get the complex s-parameter measurements from the last scan.
         This function is blocking until it is completed. (returns nparray
         sized by number of points in sweep)
-        
+
         Args:
         timeout - a value in seconds to timeout the function
         """
