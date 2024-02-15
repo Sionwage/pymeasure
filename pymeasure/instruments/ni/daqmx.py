@@ -28,13 +28,13 @@
 import logging
 import ctypes
 import numpy as np
-from sys import platform
+from sys import platform, version_info
 
 log = logging.getLogger(__name__)
 log.addHandler(logging.NullHandler())
 
 try:
-    if platform == "win32":
+    if platform == "win32" and version_info[1] < 12:
         nidaq = ctypes.windll.nicaiu
 except OSError as err:
     log.info('Failed loading the NI-DAQmx library. '

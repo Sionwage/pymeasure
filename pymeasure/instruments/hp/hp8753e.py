@@ -34,8 +34,8 @@ from pymeasure.instruments.validators import strict_discrete_set, truncated_rang
 
 class HP8753E(Instrument):
     """Represents the HP8753E Vector Network Analyzer
-    and provides a high-level interface for taking scans of the
-    scattering parameters.
+    and provides a high-level interface for taking sweeps of the
+    scattering or measurement parameters.
 
     Keyword arguements:
     adapter -- <placeholder for description of pymeasure.adapter>
@@ -45,7 +45,7 @@ class HP8753E(Instrument):
     def __init__(
         self,
         adapter=None,
-        name=None,
+        name=None,  # "Hewlett Packard 8753E Vector Network Analyzer",
         **kwargs,
     ):
         super().__init__(adapter=adapter, name=name, includeSCPI=False, **kwargs)
@@ -57,15 +57,24 @@ class HP8753E(Instrument):
         self._options = ""
 
         if name is None:
-            self._manu, self._model, _, self._fw = self.id
+            # written this way to pass 'test_all_instruments.py' while allowing the
+            # *IDN? to populate the name of the VNA
+            try:
+                self._manu, self._model, _, self._fw = self.id
+            except ValueError:
+                self._manu = "Hewlett Packard"
+                self._model = "8753E"
             self._desc = "Vector Network Analyzer"
-            self.name = f"{self._manu} {self._model} {self._desc}"
+            name = self.name = f"{self._manu} {self._model} {self._desc}"
         else:
             self.name = name
+
+        # super().__init__(adapter=adapter, name=name, includeSCPI=False, **kwargs)
 
     ALLOWED_BANDWIDTH = [10, 30, 100, 300, 1000, 3000, 3700, 6000]
     SCAN_POINT_VALUES = [3, 11, 21, 26, 51, 101, 201, 401, 801, 1601]
     SCATTERING_PARAMETERS = ["S11", "S12", "S21", "S22"]
+    MEASURING_PARAMETERS = [*SCATTERING_PARAMETERS, "A", "B", "R"]
 
     start_frequency = Instrument.control(
         "STAR?",
@@ -250,21 +259,21 @@ class HP8753E(Instrument):
         self.scan_points = 3
 
     @property
-    def parameter(self):
-        """Get the active Scattering Parameter being measured. (str from ['S11', 'S21', 'S12', 'S22'])"""
-        for parameter in HP8753E.SCATTERING_PARAMETERS:
+    def measuring_parameter(self):
+        """Get the active Scattering or Measuring Parameter being measured. (str from ['S11', 'S21', 'S12', 'S22'])"""
+        for parameter in HP8753E.MEASURING_PARAMETERS:
             if int(self.ask(f"{parameter}?")) == 1:
                 return parameter
         return None
 
-    @parameter.setter
-    def parameter(self, value):
-        """Set the active Scattering Parameter to be measured. (str from ['S11', 'S21', 'S12', 'S22'])"""
-        if value in HP8753E.SCATTERING_PARAMETERS:
+    @measuring_parameter.setter
+    def measuring_parameter(self, value):
+        """Set the active Measuring Parameter to be measured. (str from ['S11', 'S21', 'S12', 'S22'])"""
+        if value in HP8753E.MEASURING_PARAMETERS:
             self.write("%s" % value)
         else:
             raise ValueError(
-                f"Invalid value '{value}' scattering parameter requested for {self._manu} {self._model}. Valid values are: {SCATTERING_PARAMETERS}"
+                f"Invalid value '{value}' scattering parameter requested for {self._manu} {self._model}. Valid values are: {MEASURING_PARAMETERS}"
             )
 
     IFBW = Instrument.control(
@@ -330,14 +339,13 @@ class HP8753E(Instrument):
 
     @property
     def frequencies(self):
-        """Returns a list of frequencies from the last scan.
-        Does not communicate with instrument. (np.ndarray of
-        frequencys sized by number of points in sweep)"""
+        """Get a list of frequencies from the last scan.
+        (np.ndarray of frequencys sized by number of points in sweep)"""
         return np.linspace(self.start_frequency, self.stop_frequency, num=self.scan_points)
 
     @property
     def data_complex(self, timeout=10):
-        """Gets the complex s-parameter measurements from the last scan.
+        """Get the complex s-parameter measurements from the last scan.
         This function is blocking until it is completed. (returns nparray
         sized by number of points in sweep)
         

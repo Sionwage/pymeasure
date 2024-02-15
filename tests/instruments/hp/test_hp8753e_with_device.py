@@ -33,17 +33,23 @@ from pyvisa.errors import VisaIOError
 from pymeasure.adapters import PrologixAdapter
 from pymeasure.instruments.hp import HP8753E
 
-# pytest.skip("Only works with connected hardware", allow_module_level=True)
+pytest.skip("Only works with connected hardware", allow_module_level=True)
 
 
 @contextmanager
 def init_prologix_adapter():
     try:
         prologix = PrologixAdapter(
-            resource_name="ASRL4::INSTR", address=16, visa_library="@py", auto=1
+            resource_name="ASRL4::INSTR", address=16, visa_library="@py", auto=1,
         )
-        # prologix.auto = 1
+        # if prologix.ask('++eot_enable') == '1\r\n':
+        #     prologix.write('++eot_enable 0')
+
+        # # prologix.auto = 1
+        # prologix.flush_read_buffer()
         yield prologix
+    except ValueError as e:
+        raise(e)
 
     finally:
         prologix.close()
