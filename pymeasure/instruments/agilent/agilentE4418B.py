@@ -1,0 +1,128 @@
+#
+# This file is part of the PyMeasure package.
+#
+# Copyright (c) 2013-2024 PyMeasure Developers
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+#
+
+from time import sleep
+from time import time as now
+
+import numpy as np
+from pyvisa import VisaIOError
+
+from pymeasure.instruments import Instrument
+from pymeasure.instruments.validators import strict_discrete_set, truncated_range, strict_range
+
+
+class AgilentE4418B(Instrument):
+    """Represents the HP8753E Vector Network Analyzer
+    and provides a high-level interface for taking sweeps of the
+    scattering or measurement parameters.
+
+    Keyword arguements:
+    adapter -- <placeholder for description of pymeasure.adapter>
+    name -- <str> describing the instrument
+    """
+
+    def __init__(
+        self,
+        adapter=None,
+        name=None,
+        **kwargs,
+    ):
+        super().__init__(adapter=adapter, name=name, includeSCPI=True, **kwargs)
+
+        self._manu = ""
+        self._model = ""
+        self._fw = ""
+        self._sn = ""
+        self._options = ""
+
+
+        if name is None:
+            # written this way to pass 'test_all_instruments.py' while allowing the
+            # *IDN? to populate the name of the VNA
+            try:
+                self._manu, self._model, _, self._fw = self.id
+            except ValueError:
+                self._manu = "Agilent"
+                self._model = "E4418B"
+            self._desc = "Power Meter"
+            name = self.name = f"{self._manu} {self._model} {self._desc}"
+        else:
+            self.name = name
+
+
+    @property
+    def id(self):
+        self._manu, self._model, _, self._fw = self.ask('*IDN?').split(',')
+        return [self._manu, self._model, '', self._fw]
+
+    frequency = Instrument.control('SENS:FREQ?',
+                                   'SENS:FREQ %e',
+                                   """Control the frequency the power meter corrects its
+                                    measurement for.""",
+                                   values=[10e6, 18e9],
+                                   validator=strict_range,
+                                   cast=float)
+
+    offset = Instrument.control('CORR:LOSS2?',
+                                'CORR:LOSS2 %e',
+                                """
+                                Control the offset applied (in dB) to the power sensor measurement
+                                to account for cable and other losses to the power meter. (float) 
+                                """,
+                                cast=float,
+                                validator=strict_range,
+                                values=[-100,100])
+
+    enable_offset = Instrument.control('CORR:LOSS2:STAT?',
+                                       'CORR:LOSS2:STAT %s',
+                                       """
+                                       Control the offset applied (in dB) to the power sensor measurement
+                                       to account for cable and other losses to the power meter. (float) 
+                                       """,
+                                       cast=bool,
+                                       values={True: 'ON',
+                                               False: 'OFF'}
+                                       )
+
+    average_count = None
+    averaging_enable = None
+    auto_averaging = None
+    filter = None
+    filter_enabled = None
+    filter_mode = None
+    trigger_auto_delay = None
+    trigger_source = None
+    trigger_immediate = None
+    trigger_continuous = None
+    read = None
+    measure = None
+    resolution = None
+    zero = None
+    calibrate = None
+    power_reference_enabled = None # Enable/Disable
+    step_determination_enabled = None
+    relative_offset = None
+    relative_offset_enabled = None
+    
+
