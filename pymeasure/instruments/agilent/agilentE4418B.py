@@ -40,9 +40,8 @@ class AgilentE4418B(Instrument):
     windows on the display.
 
     Keyword arguements:
-    adapter -- <placeholder for description of pymeasure.adapter>
-    name -- <str> describing the instrument
-    includeSCPI -- <bool> for including other SCPI commands
+    :param pymeasure.adapter adapter: Adapter used to connect to instrument
+    :param str name: Name of the device or generated from the `AgilentE4418B.id` call on `__init__`
     """
 
     def __init__(
@@ -89,8 +88,20 @@ class AgilentE4418B(Instrument):
     frequency = Instrument.control('SENS:FREQ?',
                                    'SENS:FREQ %e',
                                    """Control the frequency the power meter corrects its
-                                    measurement for. Value range can be changed based
-                                    on the power head used. (float)""",
+                                    measurement for in Hz. Value range can be changed based
+                                    on the power head used.
+
+                                    Type: :code:`float`
+
+                                    .. code-block:: python
+
+                                        # set the frequency to 1.21GHz 
+                                        instr.frequency = 1.21e9
+
+                                        if instr.frequency == 10e6:
+                                            pass
+
+                                    """,
                                    values=[10e6, 18e9],
                                    validator=strict_range,
                                    dynamic=True,
