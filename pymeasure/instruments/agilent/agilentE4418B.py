@@ -33,13 +33,16 @@ from pymeasure.instruments.validators import strict_discrete_set, truncated_rang
 
 
 class AgilentE4418B(Instrument):
-    """Represents the HP8753E Vector Network Analyzer
-    and provides a high-level interface for taking sweeps of the
-    scattering or measurement parameters.
+    """Represents the Agilent E4418B Power Meter for measuring RF/Microwave
+    power at a given frequency.
+
+    This device has one or two channels which would be displaced in one or two of the
+    windows on the display.
 
     Keyword arguements:
     adapter -- <placeholder for description of pymeasure.adapter>
     name -- <str> describing the instrument
+    includeSCPI -- <bool> for including other SCPI commands
     """
 
     def __init__(
@@ -48,7 +51,7 @@ class AgilentE4418B(Instrument):
         name=None,
         **kwargs,
     ):
-        super().__init__(adapter=adapter, name=name, includeSCPI=True, **kwargs)
+        super().__init__(adapter=adapter, name=None, includeSCPI=True, **kwargs)
 
         self._manu = ""
         self._model = ""
@@ -70,18 +73,27 @@ class AgilentE4418B(Instrument):
         else:
             self.name = name
 
+    def ask(self, command, query_delay=None):
+        self.adapter.write(command)
+        if query_delay is not None:
+            sleep(query_delay)
+        return self.adapter.read()
 
     @property
     def id(self):
-        self._manu, self._model, _, self._fw = self.ask('*IDN?').split(',')
-        return [self._manu, self._model, '', self._fw]
+       self._manu, self._model, _, self._fw = self.ask('*IDN?').split(',')
+       return [self._manu, self._model, '', self._fw]
+    # id = Instrument.measurement('*IDN?', """Get the id of the device""")
+
 
     frequency = Instrument.control('SENS:FREQ?',
                                    'SENS:FREQ %e',
                                    """Control the frequency the power meter corrects its
-                                    measurement for.""",
+                                    measurement for. Value range can be changed based
+                                    on the power head used. (float)""",
                                    values=[10e6, 18e9],
                                    validator=strict_range,
+                                   dynamic=True,
                                    cast=float)
 
     offset = Instrument.control('CORR:LOSS2?',

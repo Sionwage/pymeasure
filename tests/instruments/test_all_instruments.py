@@ -70,6 +70,9 @@ def find_devices_in_module(module):
             # On Windows instruments.ni.daqmx can raise an OSError before ModuleNotFoundError
             # when checking installed driver files
             pass
+        except AttributeError:
+            # Stupid NI
+            pass
     return devices, channels
 
 
