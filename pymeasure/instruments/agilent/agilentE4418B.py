@@ -79,7 +79,7 @@ class AgilentE4418B(Instrument):
         name="Agilent E4418B Power Meter",
         **kwargs,
     ):
-        super().__init__(adapter=adapter, name=None, includeSCPI=True, **kwargs)
+        super().__init__(adapter=adapter, name=name, includeSCPI=True, **kwargs)
 
     #     self._manu = ""
     #     self._model = ""
@@ -104,25 +104,45 @@ class AgilentE4418B(Instrument):
 
     # # 
 
-    # def ask(self, command, query_delay=None):
-    #     self.adapter.write(command)
-    #     if query_delay is not None:
-    #         sleep(query_delay)
-    #     return self.adapter.read()
+    def ask(self, command, query_delay=None):
+        self.adapter.write(command)
+        if query_delay is not None:
+            sleep(query_delay)
+        return self.adapter.read()
 
-    # def read(self):
-    #     return self.adapter.read()
+    def read(self):
+        return self.adapter.read()
 
-    # def write(self, command):
-    #     self.adapter.write(command)
+    def write(self, command):
+        self.adapter.write(command)
 
+    id = Instrument.measurement(
+        "*IDN?",
+        """Get the identification of the instrument""",
+        cast=str,
+    )
 
     @property
-    def id(self):
-       self._manu, self._model, _, self._fw = self.ask('*IDN?').split(',')
-       return [self._manu, self._model, '', self._fw]
-    # id = Instrument.measurement('*IDN?', """Get the id of the device""")
-    id2 = Instrument.measurement("*IDN?", "")
+    def manu(self):
+        """Get the manufacturer of the instrument."""
+        if self._manu == "":
+            self._manu, self._model, _, self._fw = self.id
+        return self._manu
+
+    @property
+    def model(self):
+        """Get the model of the instrument."""
+        if self._model == "":
+            self._manu, self._model, _, self._fw = self.id
+        return self._model
+
+    @property
+    def fw(self):
+        """Get the firmware of the instrument."""
+        if self._fw == "":
+            self._manu, self._model, _, self._fw = self.id
+        return self._fw
+
     # channels = Instrument.MultiChannelCreator(PowerMeterChannel, list(range(1,3)))
 
     # ch_1 = Instrument.ChannelCreator(PowerMeterChannel, "1")
