@@ -124,5 +124,19 @@ class AgilentE4418B(Instrument):
     step_determination_enabled = None
     relative_offset = None
     relative_offset_enabled = None
-    
+    upper_window_unit = Instrument.control('UNIT1:POW?',
+                                           'UNIT1:POW %s',
+                                           """
+                                           Control the measurement units for the upper window. (string)
+                                           """,
+                                           cast=str,
 
+                                    )
+    lower_window_unit = Instrument.control('UNIT2:POW?',
+                                           'UNIT2:POW %s',
+                                           """
+                                           Control the measurement units for the lower window. (string)
+                                           """,
+                                           cast=str,
+
+                                    )
