@@ -28,65 +28,108 @@ from time import time as now
 import numpy as np
 from pyvisa import VisaIOError
 
-from pymeasure.instruments import Instrument
+from pymeasure.instruments import Instrument, Channel
 from pymeasure.instruments.validators import strict_discrete_set, truncated_range, strict_range
 
 
+class PowerMeterChannel(Channel):
+    """Channel implimentation for the Agilent E4418B Power Meter"""
+
+    frequency = Channel.control('SENS{ch}:FREQ?',
+                                'SENS{ch}:FREQ %e',
+                                """Control the frequency the power meter corrects its
+                                measurement for in Hz. Value range can be changed based
+                                on the power head used.
+
+                                Type: :code:`float`
+
+                                .. code-block:: python
+
+                                    # set the frequency to 1.21GHz
+                                    instr.frequency = 1.21e9
+
+                                    if instr.frequency == 10e6:
+                                        pass
+
+                                """,
+                                values=[10e6, 18e9],
+                                validator=strict_range,
+                                dynamic=True,
+                                cast=float)
+
+
 class AgilentE4418B(Instrument):
-    """Represents the Agilent E4418B Power Meter for measuring RF/Microwave
+    """
+    Represents the Agilent E4418B Power Meter for measuring RF/Microwave
     power at a given frequency.
 
     This device has one or two channels which would be displaced in one or two of the
     windows on the display.
 
-    Keyword arguements:
     :param pymeasure.adapter adapter: Adapter used to connect to instrument
     :param str name: Name of the device or generated from the `AgilentE4418B.id` call on `__init__`
+    :param includeSCPI: Keyword arguments for the adapter.
+    :param kwargs: Keyword arguments for the adapter.
     """
+    channels = Instrument.MultiChannelCreator(PowerMeterChannel, [1, 2])
 
     def __init__(
         self,
         adapter=None,
-        name=None,
+        name="Agilent E4418B Power Meter",
         **kwargs,
     ):
         super().__init__(adapter=adapter, name=None, includeSCPI=True, **kwargs)
 
-        self._manu = ""
-        self._model = ""
-        self._fw = ""
-        self._sn = ""
-        self._options = ""
+    #     self._manu = ""
+    #     self._model = ""
+    #     self._fw = ""
+    #     self._sn = ""
+    #     self._options = ""
+    #     self.adapter = adapter
 
 
-        if name is None:
-            # written this way to pass 'test_all_instruments.py' while allowing the
-            # *IDN? to populate the name of the VNA
-            try:
-                self._manu, self._model, _, self._fw = self.id
-            except ValueError:
-                self._manu = "Agilent"
-                self._model = "E4418B"
-            self._desc = "Power Meter"
-            name = self.name = f"{self._manu} {self._model} {self._desc}"
-        else:
-            self.name = name
+    #     if name is None:
+    #         # written this way to pass 'test_all_instruments.py' while allowing the
+    #         # *IDN? to populate the name of the VNA
+    #         try:
+    #             self._manu, self._model, _, self._fw = self.id
+    #         except ValueError:
+    #             self._manu = "Agilent"
+    #             self._model = "E4418B"
+    #         self._desc = "Power Meter"
+    #         name = self.name = f"{self._manu} {self._model} {self._desc}"
+    #     else:
+    #         self.name = name
 
-    def ask(self, command, query_delay=None):
-        self.adapter.write(command)
-        if query_delay is not None:
-            sleep(query_delay)
-        return self.adapter.read()
+    # # 
+
+    # def ask(self, command, query_delay=None):
+    #     self.adapter.write(command)
+    #     if query_delay is not None:
+    #         sleep(query_delay)
+    #     return self.adapter.read()
+
+    # def read(self):
+    #     return self.adapter.read()
+
+    # def write(self, command):
+    #     self.adapter.write(command)
+
 
     @property
     def id(self):
        self._manu, self._model, _, self._fw = self.ask('*IDN?').split(',')
        return [self._manu, self._model, '', self._fw]
     # id = Instrument.measurement('*IDN?', """Get the id of the device""")
+    id2 = Instrument.measurement("*IDN?", "")
+    # channels = Instrument.MultiChannelCreator(PowerMeterChannel, list(range(1,3)))
+
+    # ch_1 = Instrument.ChannelCreator(PowerMeterChannel, "1")
 
 
-    frequency = Instrument.control('SENS:FREQ?',
-                                   'SENS:FREQ %e',
+    frequency = Instrument.control('SENS1:FREQ?',
+                                   'SENS1:FREQ %e',
                                    """Control the frequency the power meter corrects its
                                     measurement for in Hz. Value range can be changed based
                                     on the power head used.
