@@ -23,7 +23,8 @@
 #
 
 import pytest
-from pymeasure.test import expected_protocol
 from pymeasure.instruments.agilent.agilentE4418B import AgilentE4418B
 from pyvisa.errors import VisaIOError
+
+pytest.skip('Only work with connected hardware', allow_module_level=True)
 
