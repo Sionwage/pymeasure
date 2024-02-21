@@ -29,36 +29,36 @@ from time import time as now
 import numpy as np
 from pyvisa import VisaIOError
 
-from pymeasure.instruments import Instrument, Channel
+from pymeasure.instruments import Instrument #, Channel
 from pymeasure.instruments.validators import strict_discrete_set, truncated_range, strict_range
 
 log = logging.getLogger(__name__)
 log.addHandler(logging.NullHandler())
 
-class PowerMeterChannel(Channel):
-    """Channel implimentation for the Agilent E4418B Power Meter"""
+# class PowerMeterChannel(Channel):
+#     """Channel implimentation for the Agilent E4418B Power Meter"""
 
-    frequency = Channel.control('SENS{ch}:FREQ?',
-                                'SENS{ch}:FREQ %e',
-                                """Control the frequency the power meter corrects its
-                                measurement for in Hz. Value range can be changed based
-                                on the power head used.
+#     frequency = Channel.control('SENS{ch}:FREQ?',
+#                                 'SENS{ch}:FREQ %e',
+#                                 """Control the frequency the power meter corrects its
+#                                 measurement for in Hz. Value range can be changed based
+#                                 on the power head used.
 
-                                Type: :code:`float`
+#                                 Type: :code:`float`
 
-                                .. code-block:: python
+#                                 .. code-block:: python
 
-                                    # set the frequency to 1.21GHz
-                                    instr.frequency = 1.21e9
+#                                     # set the frequency to 1.21GHz
+#                                     instr.frequency = 1.21e9
 
-                                    if instr.frequency == 10e6:
-                                        pass
+#                                     if instr.frequency == 10e6:
+#                                         pass
 
-                                """,
-                                values=[10e6, 18e9],
-                                validator=strict_range,
-                                dynamic=True,
-                                cast=float)
+#                                 """,
+#                                 values=[10e6, 18e9],
+#                                 validator=strict_range,
+#                                 dynamic=True,
+#                                 cast=float)
 
 
 class AgilentE4418B(Instrument):
@@ -82,7 +82,7 @@ class AgilentE4418B(Instrument):
         name="Agilent E4418B Power Meter",
         **kwargs,
     ):
-        super().__init__(adapter=adapter, name=name, includeSCPI=True, **kwargs)
+        super().__init__(adapter=adapter, name=name, includeSCPI=False, **kwargs)
 
     #     self._manu = ""
     #     self._model = ""
@@ -105,19 +105,19 @@ class AgilentE4418B(Instrument):
     #     else:
     #         self.name = name
 
-    channels = Instrument.MultiChannelCreator(PowerMeterChannel, [1, 2])
+    # channels = Instrument.MultiChannelCreator(PowerMeterChannel, [1, 2])
 
-    def ask(self, command, query_delay=None):
-        self.adapter.write(command)
-        if query_delay is not None:
-            sleep(query_delay)
-        return self.adapter.read()
+    # def ask(self, command, query_delay=None):
+    #     self.adapter.write(command)
+    #     if query_delay is not None:
+    #         sleep(query_delay)
+    #     return self.adapter.read()
 
-    def read(self):
-        return self.adapter.read()
+    # def read(self):
+    #     return self.adapter.read()
 
-    def write(self, command):
-        self.adapter.write(command)
+    # def write(self, command):
+    #     self.adapter.write(command)
 
     id = Instrument.measurement(
         "*IDN?",
