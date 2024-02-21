@@ -22,6 +22,7 @@
 # THE SOFTWARE.
 #
 
+import logging
 from time import sleep
 from time import time as now
 
@@ -31,6 +32,8 @@ from pyvisa import VisaIOError
 from pymeasure.instruments import Instrument, Channel
 from pymeasure.instruments.validators import strict_discrete_set, truncated_range, strict_range
 
+log = logging.getLogger(__name__)
+log.addHandler(logging.NullHandler())
 
 class PowerMeterChannel(Channel):
     """Channel implimentation for the Agilent E4418B Power Meter"""
@@ -71,7 +74,7 @@ class AgilentE4418B(Instrument):
     :param includeSCPI: Keyword arguments for the adapter.
     :param kwargs: Keyword arguments for the adapter.
     """
-    channels = Instrument.MultiChannelCreator(PowerMeterChannel, [1, 2])
+    
 
     def __init__(
         self,
@@ -102,7 +105,7 @@ class AgilentE4418B(Instrument):
     #     else:
     #         self.name = name
 
-    # # 
+    channels = Instrument.MultiChannelCreator(PowerMeterChannel, [1, 2])
 
     def ask(self, command, query_delay=None):
         self.adapter.write(command)
