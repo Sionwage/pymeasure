@@ -23,12 +23,18 @@
 #
 
 import pytest
+
+from time import sleep
+
 from pymeasure.instruments.agilent.agilentE4418B import AgilentE4418B
 from pymeasure.adapters import PrologixAdapter
 from pyvisa.errors import VisaIOError
 
 #pytest.mark.skipif(connected_device_address=='',
 #    'Only work with connected hardware', allow_module_level=True)
+
+# this uses the check_device_address.py import to see if a resource address was provided to run
+# the tests without editing the file. There might be a flag that can be set but I do not know it
 device_address = pytest.importorskip("check_device_address")
 
 # use this command to run the test without editing it
@@ -58,25 +64,43 @@ def power_meter(connected_device_address):
 
 def test_agilentE4418B_get_instrument_id(power_meter):
     # My E4418B enumerates as the following and likely was an amalgamation of two units
-    assert ['HEWLETT-PACKARD', 'E4418A', '', 'A1.08.01\n'] == power_meter.id 
+    assert ['HEWLETT-PACKARD', 'E4418A', '', 'A1.08.01'] == power_meter.id
     assert power_meter.name == 'HEWLETT-PACKARD E4418A Power Meter'
 
-
 def test_agilentE4418B_frequency(power_meter):
-    power_meter.frequency = 50e6
-    assert power_meter.frequency == 50e6
+    power_meter.reset()
+    # sleep(1)
 
-    power_meter.frequency = 2.3e9
-    assert power_meter.frequency == 2.3e9
+    assert power_meter.ch_1.frequency == 50e6
+    # assert power_meter.ch_2.frequency == 50e6
 
-    power_meter.frequency = 12e6
-    assert power_meter.frequency == 12e6
+    power_meter.ch_1.frequency = 2.3e9
+    assert power_meter.ch_1.frequency == 2.3e9
+
+    # assert power_meter.ch_2.frequency == 50e6
+
+    #power_meter.ch_2.frequency = 4.3e9
+    #assert power_meter.ch_2.frequency == 4.3e9
+
+    # assert power_meter.ch_2.frequency == 2.3e9
+
+    power_meter.ch_1.frequency = 12e6
+    assert power_meter.ch_1.frequency == 12e6
 
     power_meter.reset()
+    # sleep(2)
 
 def test_agilentE4418B_offset(power_meter):
-    assert False
+    power_meter.reset()
+    sleep(1)
 
+    power_meter.ch_1.offset = 5
+    assert power_meter.ch_1.offset == 50
+    power_meter.ch_1.offset = 10
+
+    assert power_meter.ch_1.offset == 10
+
+    power_meter.reset()
 
 def test_agilentE4418B_measurement(power_meter):
     # test the power sensor installed to the reference

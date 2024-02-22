@@ -29,8 +29,12 @@ from time import time as now
 import numpy as np
 from pyvisa import VisaIOError
 
-from pymeasure.instruments import Instrument, Channel
-from pymeasure.instruments.validators import strict_discrete_set, truncated_range, strict_range
+from pymeasure.instruments import Channel, Instrument
+from pymeasure.instruments.validators import (
+    strict_discrete_set,
+    strict_range,
+    truncated_range,
+)
 
 log = logging.getLogger(__name__)
 log.addHandler(logging.NullHandler())
@@ -60,6 +64,23 @@ class PowerMeterChannel(Channel):
                                 dynamic=True,
                                 cast=float)
 
+    offset = Channel.control('SENS{ch}:CORR:LOSS2?',
+                                'SENS{ch}:CORR:LOSS2 %e',
+                                """
+                                Control the offset subtracted (in dB) from the power sensor measurement
+                                to account for cable and other losses to the power meter. (float) 
+                                """,
+                                cast=float,)
+                                # validator=strict_range,
+                                # values=[-100,100])
+
+
+    offset_enabled = Channel.control('SENS{ch}:CORR:LOSS2:STAT?',
+                                'SENS{ch}:CORR:LOSS2:STAT %d',
+                                """
+                                Control whether the offset is enabled (bool)
+                                """,
+                                cast=bool,)
 
 class AgilentE4418B(Instrument):
     """
@@ -74,7 +95,6 @@ class AgilentE4418B(Instrument):
     :param includeSCPI: Keyword arguments for the adapter.
     :param kwargs: Keyword arguments for the adapter.
     """
-    
 
     def __init__(
         self,
@@ -89,35 +109,22 @@ class AgilentE4418B(Instrument):
         self._fw = ""
         self._sn = ""
         self._options = ""
-        self.adapter = adapter
 
 
-        # if name is None:
-        #     # written this way to pass 'test_all_instruments.py' while allowing the
-        #     # *IDN? to populate the name of the VNA
-        #     try:
-        #         self._manu, self._model, _, self._fw = self.id
-        #     except ValueError:
-        #         self._manu = "Agilent"
-        #         self._model = "E4418B"
-        #     self._desc = "Power Meter"
-        #     name = self.name = f"{self._manu} {self._model} {self._desc}"
-        # else:
-        #     self.name = name
+        if name is None:
+            # written this way to pass 'test_all_instruments.py' while allowing the
+            # *IDN? to populate the name of the VNA
+            try:
+                self._manu, self._model, _, self._fw = self.id
+            except ValueError:
+                self._manu = "Agilent"
+                self._model = "E4418B"
+            self._desc = "Power Meter"
+            name = self.name = f"{self._manu} {self._model} {self._desc}"
+        else:
+            self.name = name
 
     channels = Instrument.MultiChannelCreator(PowerMeterChannel, [1, 2])
-
-    # def ask(self, command, query_delay=None):
-    #     self.adapter.write(command)
-    #     if query_delay is not None:
-    #         sleep(query_delay)
-    #     return self.adapter.read()
-
-    # def read(self):
-    #     return self.adapter.read()
-
-    # def write(self, command):
-    #     self.adapter.write(command)
 
     id = Instrument.measurement(
         "*IDN?",
@@ -125,53 +132,27 @@ class AgilentE4418B(Instrument):
         cast=str,
     )
 
-    # @property
-    # def manu(self):
-    #     """Get the manufacturer of the instrument."""
-    #     if self._manu == "":
-    #         self._manu, self._model, _, self._fw = self.id
-    #     return self._manu
+    @property
+    def manu(self):
+        """Get the manufacturer of the instrument."""
+        if self._manu == "":
+            self._manu, self._model, _, self._fw = self.id
+        return self._manu
 
-    # @property
-    # def model(self):
-    #     """Get the model of the instrument."""
-    #     if self._model == "":
-    #         self._manu, self._model, _, self._fw = self.id
-    #     return self._model
+    @property
+    def model(self):
+        """Get the model of the instrument."""
+        if self._model == "":
+            self._manu, self._model, _, self._fw = self.id
+        return self._model
 
-    # @property
-    # def fw(self):
-    #     """Get the firmware of the instrument."""
-    #     if self._fw == "":
-    #         self._manu, self._model, _, self._fw = self.id
-    #     return self._fw
+    @property
+    def fw(self):
+        """Get the firmware of the instrument."""
+        if self._fw == "":
+            self._manu, self._model, _, self._fw = self.id
+        return self._fw
 
-    # channels = Instrument.MultiChannelCreator(PowerMeterChannel, list(range(1,3)))
-
-    # ch_1 = Instrument.ChannelCreator(PowerMeterChannel, "1")
-
-
-    # frequency = Instrument.control('SENS1:FREQ?',
-    #                                'SENS1:FREQ %e',
-    #                                """Control the frequency the power meter corrects its
-    #                                 measurement for in Hz. Value range can be changed based
-    #                                 on the power head used.
-
-    #                                 Type: :code:`float`
-
-    #                                 .. code-block:: python
-
-    #                                     # set the frequency to 1.21GHz 
-    #                                     instr.frequency = 1.21e9
-
-    #                                     if instr.frequency == 10e6:
-    #                                         pass
-
-    #                                 """,
-    #                                values=[10e6, 18e9],
-    #                                validator=strict_range,
-    #                                dynamic=True,
-    #                                cast=float)
 
     # offset = Instrument.control('CORR:LOSS2?',
     #                             'CORR:LOSS2 %e',
