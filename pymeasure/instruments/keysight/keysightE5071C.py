@@ -22,9 +22,23 @@
 # THE SOFTWARE.
 #
 
-from .keysightDSOX1102G import KeysightDSOX1102G
-from .keysightN5767A import KeysightN5767A
-from .keysightN7776C import KeysightN7776C
-from .keysightE36312A import KeysightE36312A
-from .keysightE3631A import KeysightE3631A
-from .keysightE5071C import KeysightE5071C
+
+import logging
+
+from pymeasure.instruments import Instrument, Channel
+from pymeasure.instruments.validators import strict_range, strict_discrete_set
+
+log = logging.getLogger(__name__)
+log.addHandler(logging.NullHandler())
+
+class KeysightE5071C(Instrument):
+    """
+    Need docstring
+    """
+
+    def __init__(self, adapter, name="Keysight E5071C", **kwargs):
+        super().__init__(
+            adapter, name, includeSCPI=True, **kwargs
+        )
+
+        
