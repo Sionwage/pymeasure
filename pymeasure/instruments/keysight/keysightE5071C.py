@@ -41,4 +41,69 @@ class KeysightE5071C(Instrument):
             adapter, name, includeSCPI=True, **kwargs
         )
 
-        
+        self._manu = ""
+        self._model = ""
+        self._fw = ""
+        self._sn = ""
+        self._options = ""
+
+        if name is None:
+            # written this way to pass 'test_all_instruments.py' while allowing the
+            # *IDN? to populate the name of the VNA
+            try:
+                self._manu, self._model, self._sn, self._fw = self.id
+            except ValueError:
+                self._manu = "Keysight"
+                self._model = "E5071C"
+            self._desc = "Vector Network Analyzer"
+            name = self.name = f"{self._manu} {self._model} {self._desc}"
+        else:
+            self.name = name
+
+    marker_1_position = Instrument.control(
+        "CALC1:MARK1:X %e",
+        "CALC1:MARK1:X?",
+        "Control the position of marker 1",
+        cast=float,
+        )
+
+    marker_1_value = Instrument.measurement(
+        "CALC1:MARK1:Y?",
+        """
+        Read value of marker 1. (complex)
+        """,
+        cast=complex)
+
+    id = Instrument.measurement(
+        "*IDN?",
+        """Get the identification of the instrument""",
+        cast=str,
+    )
+
+    @property
+    def manu(self):
+        """Get the manufacturer of the instrument."""
+        if self._manu == "":
+            self._manu, self._model, self._sn, self._fw = self.id
+        return self._manu
+
+    @property
+    def model(self):
+        """Get the model of the instrument."""
+        if self._model == "":
+            self._manu, self._model, self._sn, self._fw = self.id
+        return self._model
+
+    @property
+    def fw(self):
+        """Get the firmware of the instrument."""
+        if self._fw == "":
+            self._manu, self._model, self._sn, self._fw = self.id
+        return self._fw
+
+    @property
+    def sn(self):
+        """Get the serial number of the instrument."""
+        if self._sn == "":
+            self._manu, self._model, self._sn, self._fw = self.id
+        return self._sn
