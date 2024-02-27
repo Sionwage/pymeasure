@@ -25,7 +25,7 @@
 import logging
 
 from pymeasure.instruments import Channel, Instrument
-from pymeasure.instruments.validators import strict_range
+from pymeasure.instruments.validators import strict_range, strict_discrete_set
 
 log = logging.getLogger(__name__)
 log.addHandler(logging.NullHandler())
@@ -46,9 +46,9 @@ class PowerMeterChannel(Channel):
         .. code-block:: python
 
             # set the frequency to 1.21GHz
-            instr.frequency = 1.21e9
+            instr.ch_1.frequency = 1.21e9
 
-            if instr.frequency == 10e6:
+            if instr.ch_1.frequency == 10e6:
                 pass
 
         """,
@@ -74,7 +74,7 @@ class PowerMeterChannel(Channel):
         "SENS{ch}:CORR:LOSS2:STAT?",
         "SENS{ch}:CORR:LOSS2:STAT %d",
         """
-        Control whether the offset is enabled (bool)
+        Control whether the offset is enabled. (bool)
         """,
         cast=bool,
     )
@@ -87,40 +87,55 @@ class PowerMeterChannel(Channel):
         cast=float,
     )
 
-    # average_count = None
-    # averaging_enable = None
-    # auto_averaging = None
-    # filter = None
-    # filter_enabled = None
-    # filter_mode = None
-    # trigger_auto_delay = None
-    # trigger_source = None
-    # trigger_immediate = None
-    # trigger_continuous = None
-    # read = None
-    # measure = None
-    # resolution = None
-    # zero = None
-    # calibrate = None
-    # power_reference_enabled = None # Enable/Disable
-    # step_determination_enabled = None
-    # relative_offset = None
-    # relative_offset_enabled = None
-    # upper_window_unit = Instrument.control('UNIT1:POW?',
-    #                                        'UNIT1:POW %s',
-    #                                        """
-    #                                        Control the measurement units for the upper window. (string)
-    #                                        """,
-    #                                        cast=str,
+    # TODO Trigger source
 
-    #                                 )
-    # lower_window_unit = Instrument.control('UNIT2:POW?',
-    #                                        'UNIT2:POW %s',
-    #                                        """
-    #                                        Control the measurement units for the lower window. (string)
-    #                                        """,
-    #                                        cast=str,
-    #                                 )
+    # TODO Trigger immediate
+
+    # TODO Trigger continuously
+
+    # TODO Trigger Auto Delay
+
+    # Fetch Multiple (for getting the 200 reads a second option)
+
+    # Sensing Mode (is this a channel or device command?)
+
+    # TODO Average Count
+
+    # TODO Averaging Enabled
+
+    # TODO Auto Averaging
+
+    # TODO Decide averaging or filtering
+
+    # TODO Filter Mode
+
+    # Resolution
+
+    # Step Determination
+
+    # Source Port
+
+    # Relative Offset Enabled
+
+    # Relative Offset
+
+    # Math?
+
+    # needs a list of options for units ['dBm', 'watts']
+
+    window_unit = Channel.control(
+        "UNIT{ch}:POW?",
+        "UNIT{ch}:POW %s",
+        """
+        Control the measurement units for the upper window.
+        Valid units are ['W', 'DBM']. (string)
+        """,
+        cast=str,
+        values=['W', 'DBM'],
+        validator=strict_discrete_set,
+    )
+
+    # parameter for storing sensor head used on specific channel?
 
 
 class AgilentE4418B(Instrument):
@@ -155,7 +170,7 @@ class AgilentE4418B(Instrument):
             # written this way to pass 'test_all_instruments.py' while allowing the
             # *IDN? to populate the name of the VNA
             try:
-                self._manu, self._model, _, self._fw = self.id
+                self._manu, self._model, self._sn, self._fw = self.id
             except ValueError:
                 self._manu = "Agilent"
                 self._model = "E4418B"
@@ -176,21 +191,21 @@ class AgilentE4418B(Instrument):
     def manu(self):
         """Get the manufacturer of the instrument."""
         if self._manu == "":
-            self._manu, self._model, _, self._fw = self.id
+            self._manu, self._model, self._sn, self._fw = self.id
         return self._manu
 
     @property
     def model(self):
         """Get the model of the instrument."""
         if self._model == "":
-            self._manu, self._model, _, self._fw = self.id
+            self._manu, self._model, self._sn, self._fw = self.id
         return self._model
 
     @property
     def fw(self):
         """Get the firmware of the instrument."""
         if self._fw == "":
-            self._manu, self._model, _, self._fw = self.id
+            self._manu, self._model, self._sn, self._fw = self.id
         return self._fw
 
     power_reference_enabled = Instrument.control(
@@ -203,3 +218,11 @@ class AgilentE4418B(Instrument):
         values={True: 1, False: 0},
         cast=int,
     )
+
+    # TODO Perform Zero
+
+    # TODO Perform Cal
+
+    # TODO Check Zero and Cal Status
+
+    # Sensing Mode (is this a channel or device command?)
