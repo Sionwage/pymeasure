@@ -4,6 +4,7 @@ on:
     branches:
       - master
       - develop
+      - Update-CI-dependancies
   pull_request:
 
 jobs:
