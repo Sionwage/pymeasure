@@ -12,10 +12,10 @@ line-length = 100
 profile = "black"
 
 [tool.poetry]
-name = "pymeasure-keysight-e5071"
+name = "pymeasure"
 version = "0.1.0"
 description = ""
-authors = [""]
+authors = ["none <none>"]
 
 [tool.poetry.dependencies]
 python = "^3.12"
@@ -23,10 +23,10 @@ pyvisa = "^1.14.1"
 pyvisa-py = "^0.7.1"
 pint = "^0.24.3"
 numpy = "^2.0.1"
-scikit-rf = "^1.0.0"
+scikit-rf = "^1.2.0"
 jupyterlab = "^4.0.10"
 ipywidgets = "^8.1.1"
 ipykernel = "^6.29.0"
-pyserial = "^2.7.0"
-pyqtgraph = "^0.12.0"
-pandas = "^0.14"
+pyserial = "^3.5.0"
+pyqtgraph = "^0.13.7"
+pandas = "^2.0"
