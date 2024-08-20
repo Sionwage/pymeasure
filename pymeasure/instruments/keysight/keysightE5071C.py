@@ -38,7 +38,38 @@ log.addHandler(logging.NullHandler())
 # Instrument.measurement
 # Instrument.setting
 
-MEASURING_PARAMETERS = ["S11", "S21", "S12", "S22", "A", "B", "R1", "R2"]
+# This needs to be generated based on the number of ports available on the VNA
+# Could be up to 4 ports for S11 - S14, A B C D, R1 R2 R3 R4
+MEASURING_PARAMETERS = {
+    1: ["S11", "A", "R1"],
+    2: ["S11", "S21", "S12", "S22", "A", "B", "R1", "R2"],
+    4: [
+        "S11",
+        "S21",
+        "S31",
+        "S41",
+        "S12",
+        "S22",
+        "S32",
+        "S42",
+        "S13",
+        "S23",
+        "S33",
+        "S43",
+        "S14",
+        "S24",
+        "S34",
+        "S44",
+        "A",
+        "B",
+        "C",
+        "D",
+        "R1",
+        "R2",
+        "R3",
+        "R4",
+    ],
+}
 
 MEASUREMENT_FORMAT = {
     "LOGARITHMIC MAGNITUDE": "MLOG",
@@ -108,7 +139,7 @@ WINDOW_GRAPH_LAYOUT = {
     9: ["D123_456_789"],
     12: ["D123__ABC", "D1234__9ABC"],
     16: [
-        "D1234__CDEF",
+        "D1234__DEFG",
     ],
 }
 
@@ -134,10 +165,102 @@ WINDOW_GRAPH_OPTIONS = [
     "D123_456_789",
     "D123__ABC",
     "D1234__9ABC",
-    "D1234__CDEF",
+    "D1234__DEFG",
 ]
 
 # byte order mapping definition
+
+DISPLAY_LAYOUT_DOCSTRING = """
+                 _____
+    One         |  1  |
+                |_____|
+                  D1
+                 ___________     ___________     ___________     ___________
+                |     |     |   |     1     |   |       |   |   |           |
+    Two         |  1  |  2  |   |___________|   |   1   | 2 |   |     1     |
+                |     |     |   |     2     |   |       |   |   |___________|
+                |_____|_____|   |___________|   |_______|___|   |_____2_____|
+                     D12            D1_2            D112           D1_1_2
+                 ___________     ___________     ___________
+                |   |   |   |   |     1     |   |     |     |
+    Three       |   |   |   |   |___________|   |  1  |  2  |
+                | 1 | 2 | 3 |   |     2     |   |_____|_____|
+                |   |   |   |   |___________|   |           |
+                |   |   |   |   |     3     |   |     3     |
+                |___|___|___|   |___________|   |___________|
+                     D123           D1_2_3          D12_33
+                 ___________     ___________     ___________
+    Three       |     1     |   |  1  |     |   |     |  2  |
+                |___________|   |_____|  3  |   |  1  |_____|
+                |  2  |  3  |   |  2  |     |   |     |  3  |
+                |_____|_____|   |_____|_____|   |_____|_____|
+                   D11_23           D13_23          D12_13
+                 ___________     ___________     ___________
+                |  |  |  |  |   |___________|   |  1  |  2  |
+    Four        |  |  |  |  |   |___________|   |_____|_____|
+                |  |  |  |  |   |___________|   |  3  |  4  |
+                |__|__|__|__|   |___________|   |_____|_____|
+                    D1234         D1_2_3_4         D12_34
+                 ___________     ___________
+                |   |   |   |   |  1  |  2  |
+    Six         | 1 | 2 | 3 |   |_____|_____|
+                |___|___|___|   |  3  |  4  |
+                |   |   |   |   |_____|_____|
+                | 4 | 5 | 6 |   |  5  |  6  |
+                |___|___|___|   |_____|_____|
+                  D123_456        D12_34_56
+                 ___________     ___________
+                |  |  |  |  |   |_____|_____|
+    Eight       |__|__|__|__|   |_____|_____|
+                |  |  |  |  |   |_____|_____|
+                |__|__|__|__|   |_____|_____|
+                D1234_5678       D12_34_56_78
+                 ___________
+                | 1 | 2 | 3 |
+    Nine        |___|___|___|
+                | 4 | 5 | 6 |
+                |___|___|___|
+                | 7 | 8 | 9 |
+                |___|___|___|
+                D123_456_789
+                 ___________
+                |_1_|_2_|_3_|    _______________
+    Twelve      |_4_|_5_|_6_|   |_1_|_2_|_3_|_4_|
+                |_7_|_9_|_9_|   |_5_|_6_|_7_|_8_|
+                |_A_|_B_|_C_|   |_9_|_A_|_B_|_C_|
+                  D123__ABC        D1234__9ABC
+                 _______________
+                |_1_|_2_|_3_|_4_|
+    Sixteen     |_5_|_6_|_7_|_8_|
+                |_9_|_A_|_B_|_C_|
+                |_D_|_E_|_F_|_G_|
+                   D1234__DEFG
+"""
+
+MEASUREMENT_FORMAT_DOCSTRING = """
+    =======================   =============   ===============================
+    Value                     Format Sent     Description
+    =======================   =============   ===============================
+    LOGARITHMIC MAGNITUDE     MLOG            Logarithmic magnitude format.
+    PHASE                     PHAS            Phase format.
+    GROUP DELAY               GDEL            Group delay format.
+    SMITH CHART LINEAR        SLIN            Smith chart format (Lin/Phase).
+    SMITH CHART LOGARITHMIC   SLOG            Smith chart format (Log/Phase).
+    SMITH CHART               SCOM            Smith chart format (Real/Imag).
+    SMITH CHART COMPLEX       SCOM            Smith chart format (Real/Imag).
+    SMITH CHART IMPEDANCE     SMIT h          Smith chart format (R+jX).
+    SMITH CHART ADMITTANCE    SADM ittance    Smith chart format (G+jB).
+    POLAR LINEAR              PLIN ear        Polar format (Lin).
+    POLAR LOGARITHMIC         PLOG arithmic   Polar format (Log).
+    POLAR                     POL ar          Polar format (Re/Im).
+    POLAR COMPLEX             POL ar          Polar format (Re/Im).
+    LINEAR MAGNITUDE          MLIN ear        Linear magnitude format.
+    SWR                       SWR             SWR format.
+    REAL                      REAL            Real format.
+    IMAGINARY                 IMAG inary      Imaginary format.
+    PHASE EXPANDED            UPH ase         Expanded phase format.
+    PHASE POSITIVE            PPH ase         Positive phase format.
+"""
 
 
 class TraceException(Exception):
@@ -267,30 +390,8 @@ class TraceCommands(Channel):
         Control the data format of the active trace of a channel. Valid values to use are given
         below (case insensitive string):
 
-        =======================   =============   ===============================
-        Value                     Format Sent     Description
-        =======================   =============   ===============================
-        LOGARITHMIC MAGNITUDE     MLOG            Logarithmic magnitude format.
-        PHASE                     PHAS            Phase format.
-        GROUP DELAY               GDEL            Group delay format.
-        SMITH CHART LINEAR        SLIN            Smith chart format (Lin/Phase).
-        SMITH CHART LOGARITHMIC   SLOG            Smith chart format (Log/Phase).
-        SMITH CHART               SCOM            Smith chart format (Real/Imag).
-        SMITH CHART COMPLEX       SCOM            Smith chart format (Real/Imag).
-        SMITH CHART IMPEDANCE     SMIT h          Smith chart format (R+jX).
-        SMITH CHART ADMITTANCE    SADM ittance    Smith chart format (G+jB).
-        POLAR LINEAR              PLIN ear        Polar format (Lin).
-        POLAR LOGARITHMIC         PLOG arithmic   Polar format (Log).
-        POLAR                     POL ar          Polar format (Re/Im).
-        POLAR COMPLEX             POL ar          Polar format (Re/Im).
-        LINEAR MAGNITUDE          MLIN ear        Linear magnitude format.
-        SWR                       SWR             SWR format.
-        REAL                      REAL            Real format.
-        IMAGINARY                 IMAG inary      Imaginary format.
-        PHASE EXPANDED            UPH ase         Expanded phase format.
-        PHASE POSITIVE            PPH ase         Positive phase format.
-
         """
+        # MEASUREMENT_FORMAT_DOCSTRING
         if not self.is_active:
             self.make_active()
 
@@ -303,6 +404,24 @@ class TraceCommands(Channel):
             self.make_active()
 
         self.parent.measurement_format = value
+
+    @property
+    def conversion_enabled(self):
+        """
+        Control the state of parameter conversion for the trace (boolean).
+        """
+        if not self.is_active:
+            self.make_active()
+
+        return self.parent.conversion_enabled
+
+    @conversion_enabled.setter
+    def conversion_enabled(self, value):
+        # check if trace is active and set trace to be active if not
+        if not self.is_active:
+            self.make_active()
+
+        self.parent.conversion_enabled = value
 
 
 class MarkerCommands(Channel):
@@ -347,6 +466,12 @@ class MarkerCommands(Channel):
         """,
     )
 
+    # discrete mode # CALC:{{ch}}:MARK{mrk}:DISC on or off ?
+
+    # marker search
+
+    # notch definition
+
     # ref marker position
     # ref marker value
     # ref marker enabled
@@ -367,11 +492,11 @@ class PortCommands(Channel):
     Need docstring
     """
 
-    placeholder = "port_"
+    placeholder = "port"
 
     output_power = Channel.control(
-        "SOUR{{ch}}:POW:PORT{port_}?",
-        "SOUR{{ch}}:POW:PORT{port_} %d",
+        "SOUR{{ch}}:POW:PORT{port}?",
+        "SOUR{{ch}}:POW:PORT{port} %d",
         """
         Control the output power in dBm for a port of a channel (float). This property is dynamic.
         """,
@@ -379,6 +504,25 @@ class PortCommands(Channel):
         values=(-60, 10),
         cast=float,
         dynamic=True,
+    )
+
+    enable_receiver_error_correction = Channel.control(
+        "SENS{{ch}}:CORR:REC:{port}?",
+        "SENS{{ch}}:CORR:REC:{port} %s",
+        """
+        Control the state of the receiver correction for a port (boolean).
+        """,
+        cast=bool,
+    )
+
+    # needs validator to ensure source isn't the port getting calibrated
+    calculate_receiver_calibration_error = Channel.setting(
+        "SENS{{ch}}:CORR:REC{port}:COLL:ACQ %d",
+        """
+        Perform a receiver calibration using another port source with a thru connection connecting
+        the two ports. Accuracy is improved if performed after a power calibration. Cannot use the
+        port getting its receiver calibrated as the driving source (int).
+        """,
     )
 
     # power 'SOUR{1-16}:POW:PORT{1-4}?' Sets the power level of
@@ -467,7 +611,8 @@ class ChannelCommands(Channel):
         ":CALC{ch}:CONV:FUNC %s",
         """
         For the active trace of channel, select the parameter after conversion using the
-        parameter conversion function.
+        parameter conversion function. `conversion_enabled` must be set to `True` for the active
+        trace of the channel.
 
         ===========================   ============================================================
         Function Conversion           Description
@@ -491,6 +636,17 @@ class ChannelCommands(Channel):
         (string).
         """,
         cast=str,
+        validator=strict_discrete_set,
+        values=("ZREF", "ZTR", "YREF", "YTR", "INV", "ZTSH", "YTSH", "CONJ"),
+    )
+
+    conversion_enabled = Channel.control(
+        "CALC{ch}:CONV?",
+        "CALC{ch}:CONV %d",
+        """
+        Control the state of parameter conversion for the active trace of the channel (boolean).
+        """,
+        cast=bool,
     )
 
     # CALC{1-16}:DATA:FDAT
@@ -586,30 +742,8 @@ class ChannelCommands(Channel):
         Control the data format of the active trace of a channel. Valid values to use are given
         below (case insensitive string):
 
-        =======================   =============   ===============================
-        Value                     Format Sent     Description
-        =======================   =============   ===============================
-        LOGARITHMIC MAGNITUDE     MLOG            Logarithmic magnitude format.
-        PHASE                     PHAS            Phase format.
-        GROUP DELAY               GDEL            Group delay format.
-        SMITH CHART LINEAR        SLIN            Smith chart format (Lin/Phase).
-        SMITH CHART LOGARITHMIC   SLOG            Smith chart format (Log/Phase).
-        SMITH CHART               SCOM            Smith chart format (Real/Imag).
-        SMITH CHART COMPLEX       SCOM            Smith chart format (Real/Imag).
-        SMITH CHART IMPEDANCE     SMIT            Smith chart format (R+jX).
-        SMITH CHART ADMITTANCE    SADM            Smith chart format (G+jB).
-        POLAR LINEAR              PLIN            Polar format (Lin).
-        POLAR LOGARITHMIC         PLOG            Polar format (Log).
-        POLAR                     POL             Polar format (Re/Im).
-        POLAR COMPLEX             POL             Polar format (Re/Im).
-        LINEAR MAGNITUDE          MLIN            Linear magnitude format.
-        SWR                       SWR             SWR format.
-        REAL                      REAL            Real format.
-        IMAGINARY                 IMAG            Imaginary format.
-        PHASE EXPANDED            UPH             Expanded phase format.
-        PHASE POSITIVE            PPH             Positive phase format.
-
-        """,
+        """
+        + MEASUREMENT_FORMAT_DOCSTRING,
         cast=str,
         values=MEASUREMENT_FORMAT,
         map_values=True,
@@ -659,72 +793,7 @@ class ChannelCommands(Channel):
         Traces      Layout Representation
         =========   =====================
 
-                     _____
-        One         |  1  |
-                    |_____|
-                      D1
-                     ___________     ___________     ___________     ___________
-                    |     |     |   |     1     |   |       |   |   |           |
-        Two         |  1  |  2  |   |___________|   |   1   | 2 |   |     1     |
-                    |     |     |   |     2     |   |       |   |   |___________|
-                    |_____|_____|   |___________|   |_______|___|   |_____2_____|
-                         D12            D1_2            D112           D1_1_2
-                     ___________     ___________     ___________
-                    |   |   |   |   |     1     |   |     |     |
-        Three       |   |   |   |   |___________|   |  1  |  2  |
-                    | 1 | 2 | 3 |   |     2     |   |_____|_____|
-                    |   |   |   |   |___________|   |           |
-                    |   |   |   |   |     3     |   |     3     |
-                    |___|___|___|   |___________|   |___________|
-                         D123           D1_2_3          D12_33
-                     ___________     ___________     ___________
-        Three       |     1     |   |  1  |     |   |     |  2  |
-                    |___________|   |_____|  3  |   |  1  |_____|
-                    |  2  |  3  |   |  2  |     |   |     |  3  |
-                    |_____|_____|   |_____|_____|   |_____|_____|
-                       D11_23           D13_23          D12_13
-                     ___________     ___________     ___________
-                    |  |  |  |  |   |___________|   |  1  |  2  |
-        Four        |  |  |  |  |   |___________|   |_____|_____|
-                    |  |  |  |  |   |___________|   |  3  |  4  |
-                    |__|__|__|__|   |___________|   |_____|_____|
-                        D1234         D1_2_3_4         D12_34
-                     ___________     ___________
-                    |   |   |   |   |  1  |  2  |
-        Six         | 1 | 2 | 3 |   |_____|_____|
-                    |___|___|___|   |  3  |  4  |
-                    |   |   |   |   |_____|_____|
-                    | 4 | 5 | 6 |   |  5  |  6  |
-                    |___|___|___|   |_____|_____|
-                      D123_456        D12_34_56
-                     ___________     ___________
-                    |  |  |  |  |   |_____|_____|
-        Eight       |__|__|__|__|   |_____|_____|
-                    |  |  |  |  |   |_____|_____|
-                    |__|__|__|__|   |_____|_____|
-                    D1234_5678       D12_34_56_78
-                     ___________
-                    | 1 | 2 | 3 |
-        Nine        |___|___|___|
-                    | 4 | 5 | 6 |
-                    |___|___|___|
-                    | 7 | 8 | 9 |
-                    |___|___|___|
-                    D123_456_789
-                     ___________
-                    |_1_|_2_|_3_|    _______________
-        Twelve      |_4_|_5_|_6_|   |_1_|_2_|_3_|_4_|
-                    |_7_|_9_|_9_|   |_5_|_6_|_7_|_8_|
-                    |_A_|_B_|_C_|   |_9_|_A_|_B_|_C_|
-                      D123__ABC        D1234__9ABC
-                     _______________
-                    |_1_|_2_|_3_|_4_|
-        Sixteen     |_5_|_6_|_7_|_8_|
-                    |_9_|_A_|_B_|_C_|
-                    |_D_|_E_|_F_|_G_|
-                       D1234__CDEF     (not a typo, as-is from the programming manual)
-
-        """,
+        """,  # {DISPLAY_LAYOUT_DOCSTRING}
         cast=str,
         validator=strict_discrete_set,
         values=WINDOW_GRAPH_OPTIONS,
@@ -855,6 +924,8 @@ class ChannelCommands(Channel):
         cast=int,
     )
 
+    # avoid spurs SENS{ch}:SWE:ASP? enable disable
+
     # may need to change to be a function
     def restart_averaging(self, channel):
         """
@@ -949,7 +1020,7 @@ class ChannelCommands(Channel):
         dynamic=True,
     )
 
-    correction_enabled = Channel.control(
+    error_correction_enabled = Channel.control(
         "SENS{ch}:CORR:STAT?",
         "SENS{ch}:CORR:STAT %d",
         """
@@ -1019,6 +1090,16 @@ class ChannelCommands(Channel):
         values={True: 1, False: 0},
     )
 
+    trigger_initiate = Channel.setting(
+        "%s",
+        """
+        Set the channel to initiate a measurement. `True` initiates the channel measurement and
+        `False` sends a `NOP` command (boolean).
+        """,
+        map_values=True,
+        values={True: "INIT{ch}", False: "NOP"},
+    )
+
     # def trigger_continuous(self):
     #     self.write("INIT{self.id}:CONT")
 
@@ -1027,7 +1108,7 @@ class ChannelCommands(Channel):
     )
 
     ref_marker = Instrument.MultiChannelCreator(
-        MarkerCommands, [x + 1 for x in range(1)], prefix="ref_mkr_"
+        MarkerCommands, [x + 10 for x in range(1)], prefix="ref_mkr_"
     )
 
     total_markers = 1
@@ -1087,18 +1168,18 @@ class KeysightE5071C(SCPIMixin, Instrument):
         self._options = ""
         self.number_of_channels = 1
 
-        if name == "VNA":
-            # written this way to pass 'test_all_instruments.py' while allowing the
-            # *IDN? to populate the name of the VNA
-            try:
-                self._manu, self._model, self._sn, self._fw = self.id.split(",")
-            except ValueError:
-                self._manu = "Keysight"
-                self._model = "E5071C"
-            self._desc = "Vector Network Analyzer"
-            name = self.name = f"{self._manu} {self._model} {self._desc}"
-        else:
-            self.name = name
+        # if name == "VNA":
+        #     # written this way to pass 'test_all_instruments.py' while allowing the
+        #     # *IDN? to populate the name of the VNA
+        #     try:
+        #         self._manu, self._model, self._sn, self._fw = self.id.split(",")
+        #     except ValueError:
+        #         self._manu = "Keysight"
+        #         self._model = "E5071C"
+        #     self._desc = "Vector Network Analyzer"
+        #     name = self.name = f"{self._manu} {self._model} {self._desc}"
+        # else:
+        #     self.name = name
 
     @property
     def manu(self):
@@ -1134,6 +1215,7 @@ class KeysightE5071C(SCPIMixin, Instrument):
         """
         Control whether the RF output simulus is enabled or disabled (boolean).
         """,
+        cast=bool,
     )
 
     channels = Instrument.MultiChannelCreator(
@@ -1207,72 +1289,7 @@ class KeysightE5071C(SCPIMixin, Instrument):
         Channels    Layout Representation
         =========   =====================
 
-                     _____
-        One         |  1  |
-                    |_____|
-                      D1
-                     ___________     ___________     ___________     ___________
-                    |     |     |   |     1     |   |       |   |   |           |
-        Two         |  1  |  2  |   |___________|   |   1   | 2 |   |     1     |
-                    |     |     |   |     2     |   |       |   |   |___________|
-                    |_____|_____|   |___________|   |_______|___|   |_____2_____|
-                         D12            D1_2            D112           D1_1_2
-                     ___________     ___________     ___________
-                    |   |   |   |   |     1     |   |     |     |
-        Three       |   |   |   |   |___________|   |  1  |  2  |
-                    | 1 | 2 | 3 |   |     2     |   |_____|_____|
-                    |   |   |   |   |___________|   |           |
-                    |   |   |   |   |     3     |   |     3     |
-                    |___|___|___|   |___________|   |___________|
-                         D123           D1_2_3          D12_33
-                     ___________     ___________     ___________
-        Three       |     1     |   |  1  |     |   |     |  2  |
-                    |___________|   |_____|  3  |   |  1  |_____|
-                    |  2  |  3  |   |  2  |     |   |     |  3  |
-                    |_____|_____|   |_____|_____|   |_____|_____|
-                       D11_23           D13_23          D12_13
-                     ___________     ___________     ___________
-                    |  |  |  |  |   |___________|   |  1  |  2  |
-        Four        |  |  |  |  |   |___________|   |_____|_____|
-                    |  |  |  |  |   |___________|   |  3  |  4  |
-                    |__|__|__|__|   |___________|   |_____|_____|
-                        D1234         D1_2_3_4         D12_34
-                     ___________     ___________
-                    |   |   |   |   |  1  |  2  |
-        Six         | 1 | 2 | 3 |   |_____|_____|
-                    |___|___|___|   |  3  |  4  |
-                    |   |   |   |   |_____|_____|
-                    | 4 | 5 | 6 |   |  5  |  6  |
-                    |___|___|___|   |_____|_____|
-                      D123_456        D12_34_56
-                     ___________     ___________
-                    |  |  |  |  |   |_____|_____|
-        Eight       |__|__|__|__|   |_____|_____|
-                    |  |  |  |  |   |_____|_____|
-                    |__|__|__|__|   |_____|_____|
-                    D1234_5678       D12_34_56_78
-                     ___________
-                    | 1 | 2 | 3 |
-        Nine        |___|___|___|
-                    | 4 | 5 | 6 |
-                    |___|___|___|
-                    | 7 | 8 | 9 |
-                    |___|___|___|
-                    D123_456_789
-                     ___________
-                    |_1_|_2_|_3_|    _______________
-        Twelve      |_4_|_5_|_6_|   |_1_|_2_|_3_|_4_|
-                    |_7_|_9_|_9_|   |_5_|_6_|_7_|_8_|
-                    |_A_|_B_|_C_|   |_9_|_A_|_B_|_C_|
-                      D123__ABC        D1234__9ABC
-                     _______________
-                    |_1_|_2_|_3_|_4_|
-        Sixteen     |_5_|_6_|_7_|_8_|
-                    |_9_|_A_|_B_|_C_|
-                    |_D_|_E_|_F_|_G_|
-                       D1234__CDEF     (not a typo, as-is from the programming manual)
-
-        """,
+        """,  # {DISPLAY_LAYOUT_DOCSTRING}
         cast=str,
         validator=strict_discrete_set,
         values=WINDOW_GRAPH_OPTIONS,
@@ -1303,6 +1320,18 @@ class KeysightE5071C(SCPIMixin, Instrument):
         values={True: 1, False: 0},
     )
 
+    update_display = Instrument.setting(
+        "",
+        """
+        Set the VNA frontpanel display to update if the `display_enabled` property is set to False.
+        (boolean).
+
+        Updates the display for `True` and sends `NOP` for `False`.
+        """,
+        map_values=True,
+        values={True: "DISP:UPD", False: "NOP"},
+    )
+
     # if off you cannot read display
     # update display (used when display is off) 'DISPlay:UPDate:IMMediate'
 
@@ -1312,17 +1341,79 @@ class KeysightE5071C(SCPIMixin, Instrument):
     # trigger source ':TRIGger[:SEQuence]:SOURce {INTernal|EXTernal|MANual|BUS}?'
     # trigger averaging 'TRIG:AVER'
 
-    reset_averaging_on_trigger = Channel.control(
+    trigger_single = Instrument.setting(
+        "%s",
+        """
+        Set triggering to trigger once or otherwise send NOP command (no operation) (boolean).
+
+        This command's completion is reflected at the end of the measurement by sending `*OPC?`.
+
+        Check the status of the commanded measurement(s) by issuing a `E5071C.complete` to get
+        status of completion for pending operations.
+        """,
+        map_values=True,
+        values={True: "TRIG:SING", False: "NOP"},
+    )
+
+    external_trigger_delay = Instrument.control(
+        "TRIG:EXT:DEL?",
+        "TRIG:EXT:DEL %d",
+        """
+        Control the delay between a trigger event and starting a measurement when the trigger source
+        is set to external. Valid values are from 0 to 1 seconds in 10 microsecond increments
+        (float).
+        """,
+        cast=float,
+        validator=strict_range,
+        values=(0, 1),
+    )
+
+    # low latency trigger mode pg 805 TRIG:EXT:LLA? {ON|OFF|1|0}
+
+    # point trigger feature TRIG:POIN? on off 1 0 pg 806
+
+    reset_averaging_on_trigger = Instrument.control(
         "TRIG:AVER?",
         "TRIG:AVER %d",
         """
-        Control if averaging is reset on each triggering event (boolean).
+        Control if averaging is reset on each triggering event after which the instrument goes into
+        a hold status (boolean).
         """,
         cast=bool,
     )
 
-    # 'TRIG:SCOP {ALL|ACTive}' select channel to be triggered
-    # ''
+    trigger_all_channels = Instrument.control(
+        "TRIG:SCOP?",
+        "TRIG:SCOP %s",
+        """
+        Control if triggering is active for all enabled channels or only the active channel
+        (boolean).
+        """,
+        map_values=True,
+        values={True: "ALL", False: "ACT"},
+    )
+
+    trigger_source = Instrument.control(
+        "TRIG:SOUR?",
+        "TRIG:SOUR %s",
+        """
+        Control the trigger source to initiate a measurement. Valid values are `internal`,
+        `external`, `manual`, and `bus` (string).
+        """,
+        cast=str,
+        map_values=True,
+        values={"internal": "INT", "external": "EXT", "manual": "MAN", "bus": "BUS"},
+    )
+
+    trigger_by_point = Instrument.control(
+        "TRIG:POIN?",
+        "TRIG:POIN %s",
+        """
+        Control the triggering to step through points. This command also changes the sweep mode to
+        "stepped" (boolean).
+        """,
+        cast=bool,
+    )
 
     # options
 
@@ -1362,7 +1453,7 @@ class KeysightE5071C(SCPIMixin, Instrument):
     maximum_points = Instrument.measurement(
         "SERV:SWE:POIN?",
         """
-        Get the maximum number of points measured as configured on the VNA (integer).
+        Get the maximum number of points that can be measured as configured on the VNA (integer).
         """,
         cast=int,
     )
@@ -1370,7 +1461,7 @@ class KeysightE5071C(SCPIMixin, Instrument):
     minimum_frequency = Instrument.measurement(
         "SERV:SWE:FREQ:MIN?",
         """
-        Get the minimum frequency the VNA can measure (float).
+        Get the minimum frequency the VNA can measure in Hz. (float).
         """,
         cast=float,
     )
@@ -1378,7 +1469,7 @@ class KeysightE5071C(SCPIMixin, Instrument):
     maximum_frequency = Instrument.measurement(
         "SERV:SWE:FREQ:MAX?",
         """
-        Get the maximum frequency the VNA can measure (float).
+        Get the maximum frequency the VNA can measure in Hz. (float).
         """,
         cast=float,
     )
@@ -1440,7 +1531,10 @@ class KeysightE5071C(SCPIMixin, Instrument):
     operation_status_enable_register = Instrument.setting(
         "STAT:OPER:ENAB %s",
         """
-        Set the value of the Operation Status Enable Register (string).
+        Set the value of the Operation Status Enable Register (int16).
+        Valid values are 0 to 65535.
+
+        Note that bit 0 to bit 3, bit 6 to bit 13 and bit 15 cannot be set to 1.
         """,
     )
 
@@ -1449,6 +1543,29 @@ class KeysightE5071C(SCPIMixin, Instrument):
         """
         Read out if VNA warm-up satisfies system specifications (boolean).
         """,
+    )
+
+    questionable_status_event_register = Instrument.measurement(
+        "STAT:QUES?",
+        """
+        Read out value of the Questionable Status Event Register (string).
+        """,
+    )
+
+    questionable_status_condition_register = Instrument.measurement(
+        "STAT:QUES?",
+        """
+        Read out value of the Questionable Status Condition Register (string).
+        """,
+    )
+
+    questionable_status_enable_register = Instrument.control(
+        "STAT:QUES:ENAB?",
+        "STAT:QUES:ENAB %d",
+        """
+        Control the value of the Questionable Status Enable Register
+        """,
+        cast=int,
     )
 
     # 'SYST:ERR?'
@@ -1466,7 +1583,7 @@ class KeysightE5071C(SCPIMixin, Instrument):
         "FORM:DATA?",
         "FORM:DATA %s",
         """
-        Control the format of the data transfered.
+        Control the format of the data transfered when reading or writing data arrays.
 
         ============   ===========
         Values         Description
@@ -1497,20 +1614,73 @@ class KeysightE5071C(SCPIMixin, Instrument):
     # clock 'DISP:CLOC'
     # 'SYST:TIME {Hour},{Min},{Sec}?'
 
-    options = Instrument.measurement(
-        "*OPT?",
-        """
-        Get the identification number(s) of an option installed (string).
-        """,
-        cast=str,
-    )
-
     def abort(self):
         """
         Sets the trigger sequence for all channels to idle state.
         """
         self.write(":ABOR")
 
-    # select cal kit
-    # define cal kit standard
+    # select cal kit SENS{1-16}:CORR:COLL:CKIT pg 560
+    # set cal kit label SENS{1-16}:CORR:COLL:CKIT:LAB pg 561
+    # define cal kit standard type SENS{1-16}:CORR:COLL:CKIT:STAN{1-21}:TYPE pg 586
+    # {OPEN, SHOR, LOAD, THRU, UTHR, ARBI, NONE}
+    # define cal kit standard label pg 584 SENS{1-16}:CORR:COLL:CKIT:STAN{1-21}:LAB
     # define cal kit standard terms
+    # C0 :SENS{1-16}:CORR:COLL:CKIT:STAN{1-21}:C0 on page 572
+    # C1 :SENS{1-16}:CORR:COLL:CKIT:STAN{1-21}:C1 on page 573
+    # C2 :SENS{1-16}:CORR:COLL:CKIT:STAN{1-21}:C2 on page 574
+    # C3 :SENS{1-16}:CORR:COLL:CKIT:STAN{1-21}:C3 on page 575
+    # L0 :SENS{1-16}:CORR:COLL:CKIT:STAN{1-21}:L0 on page 580
+    # L1 :SENS{1-16}:CORR:COLL:CKIT:STAN{1-21}:L1 on page 581
+    # L2 :SENS{1-16}:CORR:COLL:CKIT:STAN{1-21}:L2 on page 582
+    # L3 :SENS{1-16}:CORR:COLL:CKIT:STAN{1-21}:L3 on page 583
+    # Offset Delay :SENS{1-16}:CORR:COLL:CKIT:STAN{1-21}:DEL on page 577
+    # Offset Loss :SENS{1-16}:CORR:COLL:CKIT:STAN{1-21}:LOSS on page 585
+    # Offset Z0 :SENS{1-16}:CORR:COLL:CKIT:STAN{1-21}:Z0 on page 587
+    # Arbitrary Impedance :SENS{1-16}:CORR:COLL:CKIT:STAN{1-21}:ARB on page 571
+    # Start Frequency :SENS{1-16}:CORR:COLL:CKIT:STAN{1-21}:FMIN on page 579
+    # Stop Frequency :SENS{1-16}:CORR:COLL:CKIT:STAN{1-21}:FMAX on page 578
+    # Media Type :SENS{1-16}:CORR:COLL:CKIT:STAN{1-21}:CHAR on page 576
+
+    # Save/Recall the Definition File pg 510
+    # Recall kit from file pg 499
+
+    # Define subclass of standard
+    # define standard class assignment SENS{1-16}:CORR:COLL:CKIT:ORD:
+    # {OPEN, SHOR, LOAD, THRU, TRLT, TRLR, TRLL}
+    # standard media type SENS{1-16}:CORR:COLL:CKIT:STAN{1-21}:CHAR pg 576
+
+    # MMEM:STOR save cal coefficients
+    # MMEM:LOAD load cal coeefficients
+
+    # sens{1-16}:corr:coef:save pg 558
+
+    #
+
+    lock_front_panel_and_keyboard = Instrument.control(
+        "SYST:KLOC:KBD?",
+        "SYST:KLOC:KBD %d",
+        """
+        Control the state of locking the operation of the front panel and keyboard for the VNA
+        (boolean).
+        """,
+        cast=bool,
+    )
+
+    lock_mouse_and_touchscreen = Instrument.control(
+        "SYST:KLOC:MOUS?",
+        "SYST:KLOC:MOUS %d",
+        """
+        Control the state of locking the operation of the touchpanel and mouse for the VNA boolean).
+        """,
+        cast=bool,
+    )
+
+    restore_preset = Instrument.setting(
+        "%s",
+        """
+
+        """,
+        map_values=True,
+        values={True: "SYST:PRES", False: "NOP"},
+    )
