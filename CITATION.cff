@@ -3,7 +3,11 @@ message: "If you use this software, please cite it as below."
 authors:
 - name: PyMeasure Developers
 title: "PyMeasure"
+<<<<<<< HEAD
 version: 0.14.0
+=======
+version: 0.15.0
+>>>>>>> d9b7d645847613306cf30d3b99700d9f8eb2ebdd
 doi: 10.5281/zenodo.595633
 publisher:
 - name: Zenodo

@@ -14,6 +14,10 @@ If the instrument you are looking for is not here, also check :doc:`Agilent<../a
    keysightDSOX1102G
    keysightE36312A
    keysightE3631A
+<<<<<<< HEAD
    keysightE5071C
    keysightN5767A
    keysightN7776C
+=======
+   keysight81160A
+>>>>>>> d9b7d645847613306cf30d3b99700d9f8eb2ebdd

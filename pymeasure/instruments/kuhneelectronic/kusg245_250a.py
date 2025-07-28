@@ -1,7 +1,11 @@
 #
 # This file is part of the PyMeasure package.
 #
+<<<<<<< HEAD
 # Copyright (c) 2013-2024 PyMeasure Developers
+=======
+# Copyright (c) 2013-2025 PyMeasure Developers
+>>>>>>> d9b7d645847613306cf30d3b99700d9f8eb2ebdd
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
